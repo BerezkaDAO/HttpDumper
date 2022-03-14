@@ -10,8 +10,8 @@ WORKDIR /app
 COPY . ./
 COPY go.mod ./
 COPY go.sum ./
-RUN go mod download
-RUN go mod tidy && go mod tidy -compat=1.17
+#RUN go mod download
+RUN go mod tidy -compat=1.17
 RUN go build
 
 
