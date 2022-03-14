@@ -11,7 +11,7 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 RUN go mod tidy
-RUN go build -o app
+RUN go build
 
 
 FROM alpine
@@ -26,7 +26,7 @@ RUN apk add --no-cache ca-certificates
 
 WORKDIR /bin/
 
-COPY --from=builder /app/app .
+COPY --from=builder /app/httpdumper ./app
 
 # Uncomment to run the binary in "production" mode:
 ENV GO_ENV=production
