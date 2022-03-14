@@ -9,7 +9,9 @@ WORKDIR /app
 # Download necessary Go modules
 COPY go.mod ./
 COPY go.sum ./
-RUN go mod download && go mod tidy && go build -o ./app
+RUN go mod download
+RUN go mod tidy
+RUN go build -o app
 
 
 FROM alpine
