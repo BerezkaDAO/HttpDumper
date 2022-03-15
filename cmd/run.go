@@ -16,12 +16,15 @@ limitations under the License.
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
+	"github.com/gofrs/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -48,13 +51,12 @@ var runCmd = &cobra.Command{
 			// https://forum.golangbridge.org/t/explain-how-reverse-proxy-work/6492/7
 			// https://stackoverflow.com/questions/34745654/golang-reverseproxy-with-apache2-sni-hostname-error
 
+			requestID, _ := uuid.NewV4()
 			req.Host = req.URL.Host
-			b, err := httputil.DumpRequest(req, true)
-			if err != nil {
-				//
-			}
-			log.Println(string(b))
-			proxy.ServeHTTP(w, req)
+			wr := &wrappedResponseWriter{rw: w}
+			bR, _ := httputil.DumpRequest(req, true)
+			proxy.ServeHTTP(wr, req)
+			log.Printf("============= %s =============\nRequest >>>>>>>>>>>>>>\n%s\nRsponse <<<<<<<<<<<<\n%s", requestID.String(), string(bR), wr.dump())
 		})
 
 		err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
@@ -63,6 +65,33 @@ var runCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+type wrappedResponseWriter struct {
+	rw         http.ResponseWriter
+	statusCode int
+	buf        bytes.Buffer
+}
+
+func (w *wrappedResponseWriter) Header() http.Header {
+	return w.rw.Header()
+}
+func (w *wrappedResponseWriter) Write(buf []byte) (int, error) {
+	w.buf.Write(buf)
+	return w.rw.Write(buf)
+}
+
+func (w *wrappedResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.rw.WriteHeader(statusCode)
+}
+
+func (w *wrappedResponseWriter) dump() string {
+	headers := make([]string, 0, len(w.rw.Header()))
+	for k, v := range w.rw.Header() {
+		headers = append(headers, fmt.Sprintf("%s: %s", k, v))
+	}
+	return fmt.Sprintf("Status: %d\n%s\n\n%s", w.statusCode, strings.Join(headers, "\n"), string(w.buf.Bytes()))
 }
 
 var (
