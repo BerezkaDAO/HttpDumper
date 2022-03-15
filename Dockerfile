@@ -39,5 +39,5 @@ ENV ADDR=0.0.0.0
 EXPOSE 8397
 
 # Uncomment to run the migrations before running the binary:
-CMD /bin/app run --dest-url DEST_URL
+CMD /bin/app run --dest-url $DEST_URL
 #CMD exec /bin/app
